@@ -37,8 +37,6 @@ export const AuthProvider = ({ children }) => {
           }
         }
         setLoading(false);
-        // Force reload library
-        window.location.reload();
         return;
       }
       try {
