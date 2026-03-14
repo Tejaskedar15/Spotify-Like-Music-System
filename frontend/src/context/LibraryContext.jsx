@@ -14,11 +14,11 @@ export const LibraryProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      axios.get('${API_BASE_URL}/api/library/favorites')
+      axios.get(`${API_BASE_URL}/api/library/favorites`)
         .then(res => setFavorites(res.data))
         .catch(err => console.error(err));
 
-      axios.get('${API_BASE_URL}/api/library/playlists')
+      axios.get(`${API_BASE_URL}/api/library/playlists`)
         .then(res => setPlaylists(res.data))
         .catch(err => console.error(err));
     } else {
@@ -38,7 +38,7 @@ export const LibraryProvider = ({ children }) => {
         return;
       }
       console.log('Toggling favorite for:', track.videoId, track.title);
-      const res = await axios.post('${API_BASE_URL}/api/library/favorites', {
+      const res = await axios.post(`${API_BASE_URL}/api/library/favorites`, {
         videoId: track.videoId,
         title: track.title,
         artist: track.artist,
@@ -60,7 +60,7 @@ export const LibraryProvider = ({ children }) => {
   const createPlaylist = async (name) => {
     if (!token) return alert('Please login to create a playlist');
     try {
-      const res = await axios.post('${API_BASE_URL}/api/library/playlists', { name });
+      const res = await axios.post(`${API_BASE_URL}/api/library/playlists`, { name });
       setPlaylists([...playlists, res.data]);
       return res.data;
     } catch (err) {

@@ -19,7 +19,7 @@ const Home = () => {
   useEffect(() => {
     const fetchMixes = async () => {
       try {
-        const res = await axios.get('${API_BASE_URL}/api/music/mixes');
+        const res = await axios.get(`${API_BASE_URL}/api/music/mixes`);
         setMixes(res.data);
       } catch (err) {
         console.error(err);
@@ -37,7 +37,7 @@ const Home = () => {
         return;
       }
       try {
-        const res = await axios.get('${API_BASE_URL}/api/music/recommendations');
+        const res = await axios.get(`${API_BASE_URL}/api/music/recommendations`);
         setRecommendations(res.data);
       } catch (err) {
         console.error(err);

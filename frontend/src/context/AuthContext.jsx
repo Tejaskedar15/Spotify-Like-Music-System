@@ -21,14 +21,14 @@ export const AuthProvider = ({ children }) => {
     const loadUser = async () => {
       if (!token) {
         // Auto-login a guest user
-        const loginRes = await axios.post('${API_BASE_URL}/api/auth/login', { email: 'guest@vibestream.com', password: 'guestpassword' }).catch(() => null);
+        const loginRes = await axios.post(`${API_BASE_URL}/api/auth/login`, { email: 'guest@vibestream.com', password: 'guestpassword' }).catch(() => null);
         if (loginRes && loginRes.data.token) {
           const newToken = loginRes.data.token;
           setToken(newToken);
           localStorage.setItem('token', newToken);
           axios.defaults.headers.common['x-auth-token'] = newToken;
         } else {
-          const regRes = await axios.post('${API_BASE_URL}/api/auth/register', { username: 'Guest', email: 'guest@vibestream.com', password: 'guestpassword' }).catch(() => null);
+          const regRes = await axios.post(`${API_BASE_URL}/api/auth/register`, { username: 'Guest', email: 'guest@vibestream.com', password: 'guestpassword' }).catch(() => null);
           if (regRes && regRes.data.token) {
             const newToken = regRes.data.token;
             setToken(newToken);
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       try {
-        const res = await axios.get('${API_BASE_URL}/api/auth/me');
+        const res = await axios.get(`${API_BASE_URL}/api/auth/me`);
         setUser(res.data);
       } catch (err) {
         console.error(err);
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await axios.post('${API_BASE_URL}/api/auth/login', { email, password });
+      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
       return { success: true };
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, email, password) => {
     try {
-      const res = await axios.post('${API_BASE_URL}/api/auth/register', { username, email, password });
+      const res = await axios.post(`${API_BASE_URL}/api/auth/register`, { username, email, password });
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
       return { success: true };
