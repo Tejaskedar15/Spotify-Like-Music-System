@@ -4,6 +4,8 @@ import { AuthContext } from './AuthContext';
 
 export const LibraryContext = createContext();
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const LibraryProvider = ({ children }) => {
   const { token } = useContext(AuthContext);
   const [favorites, setFavorites] = useState([]);
@@ -12,11 +14,11 @@ export const LibraryProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      axios.get('http://localhost:5000/api/library/favorites')
+      axios.get('${API_BASE_URL}/api/library/favorites')
         .then(res => setFavorites(res.data))
         .catch(err => console.error(err));
-        
-      axios.get('http://localhost:5000/api/library/playlists')
+
+      axios.get('${API_BASE_URL}/api/library/playlists')
         .then(res => setPlaylists(res.data))
         .catch(err => console.error(err));
     } else {
@@ -27,16 +29,16 @@ export const LibraryProvider = ({ children }) => {
 
   const toggleFavorite = async (track) => {
     if (!token) {
-        console.log('toggleFavorite failed: no token found');
-        return alert('Please login to save favorites');
+      console.log('toggleFavorite failed: no token found');
+      return alert('Please login to save favorites');
     }
     try {
       if (!track || !track.videoId) {
-          console.error('toggleFavorite failed: Invalid track object passed:', track);
-          return;
+        console.error('toggleFavorite failed: Invalid track object passed:', track);
+        return;
       }
       console.log('Toggling favorite for:', track.videoId, track.title);
-      const res = await axios.post('http://localhost:5000/api/library/favorites', {
+      const res = await axios.post('${API_BASE_URL}/api/library/favorites', {
         videoId: track.videoId,
         title: track.title,
         artist: track.artist,
@@ -54,11 +56,11 @@ export const LibraryProvider = ({ children }) => {
     const result = favorites.some(f => f.videoId === videoId);
     return result;
   };
-  
+
   const createPlaylist = async (name) => {
     if (!token) return alert('Please login to create a playlist');
     try {
-      const res = await axios.post('http://localhost:5000/api/library/playlists', { name });
+      const res = await axios.post('${API_BASE_URL}/api/library/playlists', { name });
       setPlaylists([...playlists, res.data]);
       return res.data;
     } catch (err) {
@@ -70,7 +72,7 @@ export const LibraryProvider = ({ children }) => {
     if (!token) return alert('Please login to modify playlists');
     if (!track || !track.videoId) return;
     try {
-      const res = await axios.post(`http://localhost:5000/api/library/playlists/${playlistId}/tracks`, {
+      const res = await axios.post(`${API_BASE_URL}/api/library/playlists/${playlistId}/tracks`, {
         videoId: track.videoId,
         title: track.title,
         artist: track.artist,
@@ -87,7 +89,7 @@ export const LibraryProvider = ({ children }) => {
   const removeTrackFromPlaylist = async (playlistId, videoId) => {
     if (!token) return alert('Please login to modify playlists');
     try {
-      const res = await axios.delete(`http://localhost:5000/api/library/playlists/${playlistId}/tracks/${videoId}`);
+      const res = await axios.delete(`${API_BASE_URL}/api/library/playlists/${playlistId}/tracks/${videoId}`);
       // Update local state
       setPlaylists(playlists.map(p => p._id === playlistId ? res.data : p));
     } catch (err) {
