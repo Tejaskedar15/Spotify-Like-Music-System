@@ -18,6 +18,7 @@ export const MusicProvider = ({ children }) => {
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState(false);
   const playerRef = useRef(null);
+  const playedIds = useRef(new Set()); // Track played song IDs to avoid repeats
 
   // Poll for progress using the Youtube Player API
   useEffect(() => {
@@ -72,8 +73,10 @@ export const MusicProvider = ({ children }) => {
     if (existingIndex !== -1) {
       setQueueIndex(existingIndex);
     } else {
-      // Playing a standalone track — fetch similar songs for auto-play
-      fetchSimilarSongs(track);
+      // Playing a standalone track — fetch different songs for auto-play
+      playedIds.current.clear();
+      playedIds.current.add(track.videoId);
+      fetchDifferentSongs(track);
     }
   };
 
@@ -86,15 +89,50 @@ export const MusicProvider = ({ children }) => {
     setIsPlaying(true);
   };
 
-  // Fetch similar songs to build a queue for auto-play
-  const fetchSimilarSongs = async (track) => {
+  // Search queries to find truly different but related songs
+  const getRelatedSearchQueries = (track) => {
+    const title = track.title || '';
+    const artist = track.artist || '';
+    
+    // Extract potential genre keywords from the title
+    const genreKeywords = ['pop', 'rock', 'hip hop', 'rap', 'jazz', 'classical', 'lofi', 'chill', 
+      'edm', 'dance', 'r&b', 'soul', 'country', 'indie', 'acoustic', 'bollywood', 'hindi',
+      'punjabi', 'tamil', 'telugu', 'romantic', 'sad', 'party', 'workout', 'motivation',
+      'kpop', 'latin', 'reggaeton', 'metal', 'blues', 'folk'];
+    
+    const lowerTitle = title.toLowerCase();
+    const lowerArtist = artist.toLowerCase();
+    const matchedGenre = genreKeywords.find(g => lowerTitle.includes(g) || lowerArtist.includes(g));
+    
+    // Build diverse search queries to get truly different songs
+    const queries = [];
+    if (matchedGenre) {
+      queries.push(`${matchedGenre} songs 2024`);
+      queries.push(`best ${matchedGenre} music`);
+      queries.push(`${matchedGenre} hits playlist`);
+    }
+    // Search by mood/vibe rather than exact song
+    queries.push(`songs like ${title.split(' ').slice(0, 3).join(' ')}`);
+    queries.push(`${artist} type songs`);
+    queries.push(`${title.split(' ')[0]} music mix`);
+    
+    return queries;
+  };
+
+  // Fetch truly different songs for auto-play  
+  const fetchDifferentSongs = async (track) => {
     try {
-      const searchQuery = `${track.artist} ${track.title}`.slice(0, 50);
+      const queries = getRelatedSearchQueries(track);
+      // Pick a random query to get variety
+      const searchQuery = queries[Math.floor(Math.random() * queries.length)];
       const res = await axios.get(`${API_BASE_URL}/api/music/search?query=${searchQuery}`);
+      
       if (Array.isArray(res.data) && res.data.length > 0) {
-        // Put current track first, then similar songs (excluding the current one)
-        const similar = res.data.filter(t => t.videoId !== track.videoId);
-        const newQueue = [track, ...similar];
+        // Filter out already played songs and the current song
+        const fresh = res.data.filter(t => 
+          t.videoId !== track.videoId && !playedIds.current.has(t.videoId)
+        );
+        const newQueue = [track, ...(fresh.length > 0 ? fresh : res.data.filter(t => t.videoId !== track.videoId))];
         setQueue(newQueue);
         setQueueIndex(0);
       } else {
@@ -102,20 +140,56 @@ export const MusicProvider = ({ children }) => {
         setQueueIndex(0);
       }
     } catch (err) {
-      // If fetch fails, just set the single track as the queue
       setQueue([track]);
       setQueueIndex(0);
     }
   };
 
-  const playNext = () => {
+  // When queue runs out, fetch more different songs based on the last played track
+  const fetchMoreSongs = async (lastTrack) => {
+    try {
+      const queries = getRelatedSearchQueries(lastTrack);
+      const searchQuery = queries[Math.floor(Math.random() * queries.length)];
+      const res = await axios.get(`${API_BASE_URL}/api/music/search?query=${searchQuery}`);
+      
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        // Filter out already played IDs AND songs with similar titles (to avoid covers/duplicates)
+        const currentTitle = lastTrack.title.toLowerCase().split('(')[0].trim();
+        const fresh = res.data.filter(t => {
+          const isPlayed = playedIds.current.has(t.videoId);
+          const sameTitle = t.title.toLowerCase().includes(currentTitle);
+          return !isPlayed && !sameTitle;
+        });
+
+        if (fresh.length > 0) {
+          setQueue(prev => [...prev, ...fresh]);
+          // Play the first new song
+          const nextIdx = queue.length; // index of first newly added song
+          setQueueIndex(nextIdx);
+          setCurrentTrack(fresh[0]);
+          playedIds.current.add(fresh[0].videoId);
+          setIsPlaying(true);
+          return true;
+        }
+      }
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const playNext = async () => {
     if (queue.length === 0) return;
     
     let nextIndex;
     if (shuffle) {
       // Pick a random track that's not the current one
-      const available = queue.filter((_, i) => i !== queueIndex);
-      if (available.length === 0) return;
+      const available = queue.filter((_, i) => i !== queueIndex && !playedIds.current.has(queue[i]?.videoId));
+      if (available.length === 0) {
+        // All songs played, fetch more
+        if (currentTrack) await fetchMoreSongs(currentTrack);
+        return;
+      }
       const randomTrack = available[Math.floor(Math.random() * available.length)];
       nextIndex = queue.indexOf(randomTrack);
     } else {
@@ -123,16 +197,21 @@ export const MusicProvider = ({ children }) => {
     }
 
     if (nextIndex >= queue.length) {
-      // Reached end of queue
+      // Reached end of queue — fetch more different songs instead of stopping
       if (repeat) {
-        nextIndex = 0; // Loop back to beginning
+        nextIndex = 0;
+      } else if (currentTrack) {
+        // Auto-fetch new songs
+        await fetchMoreSongs(currentTrack);
+        return;
       } else {
-        return; // Stop playing
+        return;
       }
     }
 
     setQueueIndex(nextIndex);
     setCurrentTrack(queue[nextIndex]);
+    playedIds.current.add(queue[nextIndex]?.videoId);
     setIsPlaying(true);
   };
 

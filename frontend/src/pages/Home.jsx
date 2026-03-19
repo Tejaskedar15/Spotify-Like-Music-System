@@ -48,9 +48,24 @@ const Home = () => {
     fetchRecs();
   }, [token]);
 
+  // IST time-based greeting
+  const getGreeting = () => {
+    // Get IST time (UTC + 5:30)
+    const now = new Date();
+    const istOffset = 5.5 * 60; // IST offset in minutes
+    const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const istMinutes = utcMinutes + istOffset;
+    const istHour = Math.floor((istMinutes / 60) % 24);
+    
+    if (istHour >= 5 && istHour < 12) return 'Good morning';
+    if (istHour >= 12 && istHour < 17) return 'Good afternoon';
+    if (istHour >= 17 && istHour < 21) return 'Good evening';
+    return 'Good night';
+  };
+
   return (
     <div className="p-8 pb-32">
-      <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mb-6">Good evening</h1>
+      <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mb-6">{getGreeting()}</h1>
 
       {/* Mixes Section */}
       <h2 className="text-2xl font-bold mb-4">Your Top Mixes</h2>
