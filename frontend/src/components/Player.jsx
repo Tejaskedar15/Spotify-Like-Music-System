@@ -5,7 +5,7 @@ import { MusicContext } from '../context/MusicContext';
 import { LibraryContext } from '../context/LibraryContext';
 
 const Player = () => {
-  const { currentTrack, isPlaying, progress, currentTime, duration, volume, togglePlay, seek, updateVolume } = useContext(MusicContext);
+  const { currentTrack, isPlaying, progress, currentTime, duration, volume, shuffle, repeat, togglePlay, seek, updateVolume, playNext, playPrevious, toggleShuffle, toggleRepeat } = useContext(MusicContext);
   const { isFavorite, toggleFavorite, playlists, addTrackToPlaylist } = useContext(LibraryContext);
 
   const formatTime = (time) => {
@@ -60,10 +60,10 @@ const Player = () => {
       {/* Primary Controls */}
       <div className="flex flex-col items-center max-w-[45%] w-full gap-2">
         <div className="flex items-center gap-6">
-          <button className="text-[#b3b3b3] hover:text-white transition-colors">
+          <button onClick={toggleShuffle} className={`${shuffle ? 'text-[#1db954]' : 'text-[#b3b3b3]'} hover:text-white transition-colors`}>
             <Shuffle size={20} />
           </button>
-          <button className="text-[#b3b3b3] hover:text-white transition-colors">
+          <button onClick={playPrevious} className="text-[#b3b3b3] hover:text-white transition-colors">
             <SkipBack size={24} className="fill-current" />
           </button>
           
@@ -76,10 +76,10 @@ const Player = () => {
             {isPlaying ? <Pause size={16} className="fill-current" /> : <Play size={16} className="fill-current ml-1" />}
           </motion.button>
           
-          <button className="text-[#b3b3b3] hover:text-white transition-colors">
+          <button onClick={playNext} className="text-[#b3b3b3] hover:text-white transition-colors">
             <SkipForward size={24} className="fill-current" />
           </button>
-          <button className="text-[#b3b3b3] hover:text-white transition-colors">
+          <button onClick={toggleRepeat} className={`${repeat ? 'text-[#1db954]' : 'text-[#b3b3b3]'} hover:text-white transition-colors`}>
             <Repeat size={20} />
           </button>
         </div>
