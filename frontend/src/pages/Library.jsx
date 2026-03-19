@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Library = () => {
   const { favorites, toggleFavorite, isFavorite, playlists, addTrackToPlaylist } = useContext(LibraryContext);
-  const { playTrack, currentTrack } = useContext(MusicContext);
+  const { playTrack, playFromPlaylist, currentTrack } = useContext(MusicContext);
 
   return (
     <div className="p-8 pb-32 min-h-screen">
@@ -39,7 +39,7 @@ const Library = () => {
                 transition={{ delay: i * 0.05 }}
                 key={track.videoId} 
                 className="group flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 transition-all duration-300 cursor-pointer backdrop-blur-md shadow-lg"
-                onClick={() => playTrack(track)}
+                onClick={() => playFromPlaylist(favorites, i)}
               >
                 <div className="flex items-center gap-5">
                   <div className="text-white/40 font-mono w-6 text-center text-sm font-bold">{i + 1}</div>

@@ -277,6 +277,7 @@ export const MusicProvider = ({ children }) => {
       {currentTrack && (
         <div className="absolute opacity-0 pointer-events-none -z-50 -top-[9999px]">
           <YouTube 
+            key={currentTrack.videoId}
             videoId={currentTrack.videoId}
             opts={{
               height: '1',
